@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hacking Game - Start</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #2e3b4e;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .container {
+            background-color: #16213e;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            color: #fff;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            color: #e94560;
+            margin-bottom: 20px;
+        }
+
+        p {
+            color: #ccc;
+            margin: 10px 0;
+            font-size: 1rem;
+        }
+
+        #gameDescription {
+            font-size: 1.1rem;
+            font-weight: 400;
+            color: #aaa;
+            margin-bottom: 25px;
+        }
+
+        button {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.2rem;
+            background-color: #e94560;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #d63447;
+        }
+
+        button:focus {
+            outline: none;
+        }
+
+        .info-container {
+            margin-top: 20px;
+        }
+
+        .info-container p {
+            font-size: 1rem;
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Hacking Game</h1>
+    <p id="gameInfo">To start, press "Start Game".</p>
+    <p id="gameDescription">In this game, you will need to guess 4 digits in the correct order. Enter your guesses and receive hints based on correctness. Good luck!</p>
+    <p id="instruction">Just enter the 4 digits one by one and try to guess the right combination.</p>
+
+    <button id="startGameButton">Start Game</button>
+
+    <div class="info-container">
+        <p><strong>Note:</strong> Please make sure you are logged in to start the game. If not, log in first.</p>
+    </div>
+</div>
+
+<script>
+    const startGameButton = document.getElementById('startGameButton');
+
+    startGameButton.addEventListener('click', async function () {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert("You must be logged in to start the game.");
+            return;
+        }
+
+        const response = await fetch('http://localhost:8080/api/game/start', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            }
+        });
+
+        if (response.ok) {
+            const result = await response.json();
+            localStorage.setItem('gameId', result.gameId);
+            window.location.href = 'guess.html';
+        } else {
+            const error = await response.json();
+            alert(error.error || 'Failed to start the game.');
+        }
+    });
+</script>
+
+</body>
+</html>

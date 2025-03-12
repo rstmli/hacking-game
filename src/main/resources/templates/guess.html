@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hacking Game - Guess</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #1a1a2e;
+            color: white;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        .container {
+            background-color: #16213e;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        h1 {
+            color: #e94560;
+        }
+
+        .inputs {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+            justify-content: center;
+        }
+
+        input {
+            width: 50px;
+            height: 50px;
+            font-size: 18px;
+            text-align: center;
+            background-color: #e94560;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        input:focus {
+            outline: none;
+            background-color: #d63447;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e94560;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #d63447;
+        }
+
+        .guess-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .guess-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .guess-cell {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #ccc;
+            border-radius: 4px;
+            color: black;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .correct {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .misplaced {
+            background-color: #FFEB3B;
+            color: black;
+        }
+
+        .incorrect {
+            background-color: #F44336;
+            color: white;
+        }
+
+        #gameResult {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .win {
+            background-color: #4CAF50;
+        }
+
+        .lose {
+            background-color: #F44336;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Hacking Game - Guess</h1>
+    <p id="remainingAttempts">Remaining Attempts: 5</p>
+
+    <div class="inputs">
+        <input type="text" id="input1" maxlength="1">
+        <input type="text" id="input2" maxlength="1">
+        <input type="text" id="input3" maxlength="1">
+        <input type="text" id="input4" maxlength="1">
+    </div>
+
+    <button id="makeGuessButton">Make Guess</button>
+
+    <div id="guessHistory" class="guess-grid"></div>
+    <p id="gameResult"></p>
+</div>
+
+<script>
+    const makeGuessButton = document.getElementById('makeGuessButton');
+    const inputs = [
+        document.getElementById('input1'),
+        document.getElementById('input2'),
+        document.getElementById('input3'),
+        document.getElementById('input4')
+    ];
+    const remainingAttempts = document.getElementById('remainingAttempts');
+    const guessHistory = document.getElementById('guessHistory');
+    const gameResult = document.getElementById('gameResult');
+
+    let attempts = 5;
+    let guess = ["", "", "", ""];
+    const gameId = localStorage.getItem('gameId');
+
+    inputs.forEach((input, index) => {
+        input.addEventListener('input', () => {
+            guess[index] = input.value;
+            if (input.value !== "" && index < inputs.length - 1) {
+                inputs[index + 1].focus();
+            }
+        });
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Backspace') {
+            const currentIndex = inputs.findIndex(input => input === document.activeElement);
+            if (currentIndex > 0 && inputs[currentIndex].value === "") {
+                inputs[currentIndex - 1].focus();
+            }
+        }
+    });
+
+    async function makeGuess() {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            alert("You must be logged in to make a guess.");
+            return;
+        }
+
+        if (guess.some(g => g === "")) {
+            alert("Please fill all 4 numbers.");
+            return;
+        }
+
+        const response = await fetch('http://localhost:8080/api/game/guess', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+                gameId: gameId,
+                guessNumbers: guess.map(num => Number(num))
+            })
+        });
+
+        if (response.ok) {
+            const result = await response.text();
+            attempts--;
+            remainingAttempts.textContent = `Remaining Attempts: ${attempts}`;
+
+            const resultParts = result.split(", ");
+            const guessStatus = guess.map(num => {
+                if (resultParts.some(part => part.includes(`${num} = doğru yerdə`))) {
+                    return "correct";
+                } else if (resultParts.some(part => part.includes(`${num} = yanlış yerdə`))) {
+                    return "misplaced";
+                } else {
+                    return "incorrect";
+                }
+            });
+
+            const row = document.createElement('div');
+            row.classList.add('guess-row');
+
+            guess.forEach((num, index) => {
+                const cell = document.createElement('div');
+                cell.classList.add('guess-cell', guessStatus[index]);
+                cell.textContent = num;
+                row.appendChild(cell);
+            });
+
+            guessHistory.appendChild(row);
+
+            if (result.includes("Təbriklər")) {
+                gameResult.textContent = "Təxmin doğru! Təbriklər!";
+                gameResult.classList.add('win');
+
+                document.querySelectorAll('.guess-cell').forEach(cell => {
+                    cell.classList.remove('incorrect', 'misplaced');
+                    cell.classList.add('correct');
+                });
+
+                setTimeout(() => window.location.href = 'game.html', 3000);
+            } else if (result.includes("kaybettiniz")) {
+                gameResult.textContent = "Təxminləriniz bitdi, kaybettiniz!";
+                gameResult.classList.add('lose');
+
+                document.querySelectorAll('.guess-cell').forEach(cell => {
+                    cell.classList.remove('incorrect', 'misplaced');
+                    cell.classList.add('correct');
+                });
+
+                setTimeout(() => window.location.href = 'game.html', 3000);
+            }
+
+            inputs.forEach(input => input.value = "");
+            inputs[0].focus();
+        } else {
+            const error = await response.json();
+            alert(error.error || 'Failed to make a guess.');
+        }
+    }
+
+    makeGuessButton.addEventListener('click', makeGuess);
+
+    document.addEventListener("keypress", function(event) {
+        if (event.key === "Enter") {
+            makeGuess();
+        }
+    });
+</script>
+
+</body>
+</html>
