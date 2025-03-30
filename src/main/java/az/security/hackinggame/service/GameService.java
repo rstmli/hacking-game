@@ -22,9 +22,9 @@ public class GameService {
     private final GuessRepository guessRepository;
     private final UserRepository userRepository;
 
+
     public Game startGame(String username) {
-        UserEntity user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı!"));
+        UserEntity user = userRepository.findByUsername(username).orElseThrow(() -> new RuntimeException("Kullanıcı bulunamadı!"));
 
         List<Integer> secretNumbers = generateSecretNumbers();
 
@@ -39,8 +39,7 @@ public class GameService {
     }
 
     public String makeGuess(Long gameId, List<Integer> guessNumbers) {
-        Game game = gameRepository.findById(gameId)
-                .orElseThrow(() -> new RuntimeException("Oyun bulunamadı!"));
+        Game game = gameRepository.findById(gameId).orElseThrow(() -> new RuntimeException("Oyun bulunamadı!"));
 
         if (game.getStatus() != GameStatus.ACTIVE) {
             throw new RuntimeException("Oyun aktif değil!");

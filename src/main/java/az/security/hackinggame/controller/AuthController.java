@@ -15,7 +15,7 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<String> register(@RequestBody AuthRequest authRequest) {
         try {
-            String result = authService.register(authRequest.getUsername(), authRequest.getPassword());
+            String result = authService.register(authRequest.username(), authRequest.password());
             return ResponseEntity.ok(result);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -25,7 +25,7 @@ public class AuthController {
     @PostMapping("/login")
     public ResponseEntity<String> login(@RequestBody AuthRequest authRequest) {
         try {
-            String token = authService.login(authRequest.getUsername(), authRequest.getPassword());
+            String token = authService.login(authRequest.username(), authRequest.password());
             return ResponseEntity.ok(token);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
